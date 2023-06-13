@@ -1,0 +1,62 @@
+class Debugger:
+    def __init__(self):
+        self.breakpoints = []
+        self.breakpoints_enabled = True
+        self.call_stack = []
+
+    def set_breakpoint(self, line_number):
+        self.breakpoints.append(line_number)
+
+    def remove_breakpoint(self, line_number):
+        if line_number in self.breakpoints:
+            self.breakpoints.remove(line_number)
+
+    def enable_breakpoints(self):
+        self.breakpoints_enabled = True
+
+    def disable_breakpoints(self):
+        self.breakpoints_enabled = False
+
+    def execute_code(self, code):
+        lines = code.split("\n")
+        line_number = 0
+
+        while line_number < len(lines):
+            if line_number in self.breakpoints and self.breakpoints_enabled:
+                self.handle_breakpoint(line_number)
+
+            try:
+                line = lines[line_number]
+                exec(line)
+                line_number += 1
+            except Exception as e:
+                self.handle_exception(line_number, e)
+
+    def handle_breakpoint(self, line_number):
+        print(f"Breakpoint reached at line {line_number}")
+        print("Call Stack:")
+        for frame in self.call_stack:
+            print(frame)
+        print()
+
+    def handle_exception(self, line_number, exception):
+        print(f"Exception occurred at line {line_number}")
+        print(f"Exception: {exception}")
+        print("Call Stack:")
+        for frame in self.call_stack:
+            print(frame)
+        print()
+
+    def trace_calls(self, frame, event, arg):
+        if event == 'call':
+            self.call_stack.append(frame.f_code.co_name)
+        elif event == 'return':
+            self.call_stack.pop()
+
+        return self.trace_calls
+
+    def debug_function(self, func):
+        import sys
+        sys.settrace(self.trace_calls)
+        func()
+        sys.settrace(None)
